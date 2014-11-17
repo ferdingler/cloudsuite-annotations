@@ -1,34 +1,141 @@
 <script type="text/javascript" src="https://www.google.com/jsapi?autoload={'modules':[{'name':'visualization','version':'1','packages':['corechart']}]}"></script>
 
 <script type="text/javascript">
-	
-	google.setOnLoadCallback(drawSeriesChart);
 
-    function drawSeriesChart() {
+	var selectedWell = null;
+	var chart = null;
+	var dataPoints = [];
+	var annotations = [];
+	var projectId = 'f6bb502d-6e16-4f7c-b228-0b8c623c024a';
 
-    	var data = [];
-    	data.push(['ID', 'ROW', 'COL', '', '']);
-    	for(var i=1; i<12; i+=2){
-			for(var j=1; j<12; j+=2){
-	    		data.push(['', i, j, 1, 1]);
-	    	}    		
-    	}
+	$(document).ready(function () {
+		$('#rightPanel').hide();
+		initChart();
+	});
 
-	    var wells = google.visualization.arrayToDataTable(data);
+    function drawChart() {
+
+		$.each(annotations, function( index, value ) {
+		  	var wellNumber = value.metadata.wellId;
+			dataPoints[wellNumber][3] = 'Annotated';
+		});
+
+		var wells = google.visualization.arrayToDataTable(dataPoints);
 
       	var options = {
+      		animation: {
+      			easing: 'inAndOut',
+      			duration: 3000
+      		},
         	title: 'Sample Plate',
         	hAxis: {minValue: 12},
         	vAxis: {minValue: 12},
-        	bubble: {textStyle: {fontSize: 11}}
+        	bubble: {textStyle: {fontSize: 11}},
+        	legend: {
+        		position: 'none'
+        	}
       	};
 
-      	var chart = new google.visualization.BubbleChart(document.getElementById('series_chart_div'));
+      	chart = new google.visualization.BubbleChart(document.getElementById('series_chart_div'));
       	chart.draw(wells, options);
+
+      	google.visualization.events.addListener(chart, 'select', selectHandler);
     }
+
+    function selectHandler(e) {
+		var selection = chart.getSelection();
+		if(selection.length > 0){
+			var itemNumber = selection[0].row + 1;
+			var item = dataPoints[itemNumber];
+			selectedWell = item[0];
+			$('#rightPanel').show();
+			$('#selectedWellId').html(selectedWell);
+			displayAnnotations();
+			console.log(item);
+		}else{
+			selectedWell = null;
+			$('#rightPanel').hide();
+		}
+	}
+
+	function saveAnnotation(){
+		var annotation = {
+			userId: 'ferdingler',
+			assetId: projectId,
+			comment: $('#annotationText').val(),
+			metadata: {
+				wellId: selectedWell,
+				project: 'My Demo Project'
+			}
+		};
+
+		$.ajax({
+		  type: "POST",
+		  url: '/annotation',
+		  data: annotation,
+		  success: function(){
+		  	$('#annotationText').val('');
+		    initChart();
+		    alert('Annotation has been saved!');
+		  },
+		  dataType: 'application/json'
+		});
+	}
+
+	function initChart(){
+		getAnnotations();
+	}
+
+	function loadPlate(){
+		$.get( "/plate/dummyPlate", function(data) {
+			dataPoints = data;
+			drawChart();
+		});
+	}
+
+	function getAnnotations(){
+		$.get( "/annotation/" + projectId, function(data) {
+			annotations = data;
+			loadPlate();
+		});
+	}
+
+	function displayAnnotations(){
+
+		var anns = [];
+		$.each(annotations, function( index, value ) {
+			if(value.metadata.wellId === selectedWell){
+				anns.push(value);
+			}
+		});
+
+		$('#annotationsList').html('');
+		$.each(anns, function( index, value ) {
+		  	$('#annotationsList').append('<li>' + value.comment + '</li>');
+		});
+	}
 </script>
 
-<div id="series_chart_div" style="width: 900px; height: 500px;">
-	
+<div class="row">
+	<div class="col-md-8">
+		<div id="series_chart_div" style="width: 900px; height: 500px;">
+			
+		</div>
+	</div>
+	<div class="col-md-4">
+		<div id="rightPanel">
+			<div class="well" style="margin-top: 25px">
+				<h4>Add annotation for well <span id="selectedWellId"></span>:</h4>
+				<textarea id="annotationText" rows="5" cols="30" class="form-control"></textarea>
+				<br>
+				<button class="btn btn-primary" onclick="saveAnnotation()">Save</button>
+			</div>
+			<div class="well" id="annotationsView">
+				<ul id="annotationsList">
+					
+				</ul>
+			</div>
+		</div>
+	</div>
 </div>
    
