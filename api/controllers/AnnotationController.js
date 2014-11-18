@@ -9,6 +9,8 @@ module.exports = {
 
 	get: function(req, res){
 
+		res.header('Access-Control-Allow-Origin', req.headers.origin);
+
 		var assetIdParam = req.param('assetId');
 		var annotations = [];
 

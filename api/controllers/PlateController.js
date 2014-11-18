@@ -8,7 +8,12 @@
 module.exports = {
 
 	view: function(req, res){
-		res.view('plate');
+		res.view('plate', {
+			project: {
+				assetId: req.param('assetId'),
+				name: req.param('projectName')
+			}
+		});
 	},
 
 	dummyPlate: function(req, res){

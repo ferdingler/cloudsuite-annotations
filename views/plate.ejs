@@ -6,12 +6,48 @@
 	var chart = null;
 	var dataPoints = [];
 	var annotations = [];
-	var projectId = 'f6bb502d-6e16-4f7c-b228-0b8c623c024a';
+	var projectId = '<%= project.assetId %>';
 
 	$(document).ready(function () {
+
+		$('#saveBtn').click(saveAnnotation);
+
 		$('#rightPanel').hide();
 		initChart();
 	});
+
+	function saveAnnotation(){
+
+		if($('#annotationText').val().length === 0){
+			return;
+		}
+		
+		var annotation = {
+			userId: 'ferdingler',
+			assetId: projectId,
+			comment: $('#annotationText').val(),
+			metadata: {
+				wellId: selectedWell,
+				project: 'My Demo Project'
+			}
+		};
+
+		$.ajax({
+		  type: "POST",
+		  url: '/annotation',
+		  data: annotation,
+		  dataType: 'application/json'
+		});
+
+		window.setTimeout(function(){
+			$('#annotationText').val('');
+			initChart();
+		}, 500);
+
+		window.setTimeout(function(){
+			selectHandler();
+		}, 1000);
+	}
 
     function drawChart() {
 
@@ -33,6 +69,10 @@
         	bubble: {textStyle: {fontSize: 11}},
         	legend: {
         		position: 'none'
+        	},
+        	series: {
+        		'Annotated': {color: '#D61515'},
+        		'Not annotated': {color: '#239632'}
         	}
       	};
 
@@ -51,35 +91,10 @@
 			$('#rightPanel').show();
 			$('#selectedWellId').html(selectedWell);
 			displayAnnotations();
-			console.log(item);
 		}else{
 			selectedWell = null;
 			$('#rightPanel').hide();
 		}
-	}
-
-	function saveAnnotation(){
-		var annotation = {
-			userId: 'ferdingler',
-			assetId: projectId,
-			comment: $('#annotationText').val(),
-			metadata: {
-				wellId: selectedWell,
-				project: 'My Demo Project'
-			}
-		};
-
-		$.ajax({
-		  type: "POST",
-		  url: '/annotation',
-		  data: annotation,
-		  success: function(){
-		  	$('#annotationText').val('');
-		    initChart();
-		    alert('Annotation has been saved!');
-		  },
-		  dataType: 'application/json'
-		});
 	}
 
 	function initChart(){
@@ -111,10 +126,27 @@
 
 		$('#annotationsList').html('');
 		$.each(anns, function( index, value ) {
-		  	$('#annotationsList').append('<li>' + value.comment + '</li>');
+			var timestamp = value.createdAt.substring(0, 10);
+			var item = '<a href="#" class="list-group-item"><span>'+value.comment+'</span><br><span class="text-muted">On '+ timestamp + ' by ' + value.userId+'</span></a>';
+		  	$('#annotationsList').append(item);
 		});
 	}
 </script>
+
+<div class="row">
+	<div class="page-header">
+	  <h1>
+	  	<span><%= project.name %></span>
+	  	<small><%= project.assetId %> 
+	  		&nbsp;&nbsp;&nbsp;&nbsp;
+	  		<a href="http://localhost.lifetechnologies.com:9002">
+	  			<span class="glyphicon glyphicon-cloud" aria-hidden="true"></span>
+	  			Data Manager
+	  		</a>
+	  	</small>
+	  </h1>
+	</div>
+</div>
 
 <div class="row">
 	<div class="col-md-8">
@@ -124,18 +156,20 @@
 	</div>
 	<div class="col-md-4">
 		<div id="rightPanel">
-			<div class="well" style="margin-top: 25px">
-				<h4>Add annotation for well <span id="selectedWellId"></span>:</h4>
-				<textarea id="annotationText" rows="5" cols="30" class="form-control"></textarea>
-				<br>
-				<button class="btn btn-primary" onclick="saveAnnotation()">Save</button>
-			</div>
-			<div class="well" id="annotationsView">
-				<ul id="annotationsList">
-					
-				</ul>
+			<div class="panel panel-default" id="annotationsView" style="margin-top: 25px">
+				<div class="panel-heading">
+				    <h3 class="panel-title">Annotations</h3>
+				  </div>
+				<div class="list-group" id="annotationsList">
+
+				</div>
+				<div class="panel-body addAnnotation">
+					<textarea id="annotationText" rows="3" cols="25" class="form-control" placeholder="Type text for adding annotation on this well"></textarea>
+				</div>
+				<div class="panel-footer">
+					<button class="btn btn-primary" id="saveBtn">Save</button>
+				</div>
 			</div>
 		</div>
 	</div>
 </div>
-   
