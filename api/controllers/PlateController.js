@@ -12,7 +12,8 @@ module.exports = {
 			project: {
 				assetId: req.param('assetId'),
 				name: req.param('projectName')
-			}
+			},
+			wellId: req.param('wellId')
 		});
 	},
 

@@ -7,13 +7,22 @@
 	var dataPoints = [];
 	var annotations = [];
 	var projectId = '<%= project.assetId %>';
+	var projectName = '<%= project.name %>';
+	var wellId = '<%= wellId %>';
 
 	$(document).ready(function () {
 
 		$('#saveBtn').click(saveAnnotation);
-
 		$('#rightPanel').hide();
+
 		initChart();
+
+		if(wellId !== undefined){
+			window.setTimeout(function(){
+				chart.setSelection([{row: wellId - 1, column:null}]);
+				selectHandler();
+			}, 1200);
+		}
 	});
 
 	function saveAnnotation(){
@@ -21,11 +30,16 @@
 		if($('#annotationText').val().length === 0){
 			return;
 		}
+
+		var annotationUrl = 'http://localhost:1337/plate/view?assetId=' + projectId;
+		annotationUrl += '&projectName=' + projectName;
+		annotationUrl += '&wellId=' + selectedWell;
 		
 		var annotation = {
-			userId: 'ferdingler',
+			userId: 'ferdingler@gmail.com',
 			assetId: projectId,
 			comment: $('#annotationText').val(),
+			url: annotationUrl,
 			metadata: {
 				wellId: selectedWell,
 				project: 'My Demo Project'
@@ -43,10 +57,6 @@
 			$('#annotationText').val('');
 			initChart();
 		}, 500);
-
-		window.setTimeout(function(){
-			selectHandler();
-		}, 1000);
 	}
 
     function drawChart() {
@@ -112,10 +122,15 @@
 		$.get( "/annotation/" + projectId, function(data) {
 			annotations = data;
 			loadPlate();
+			displayAnnotations();
 		});
 	}
 
 	function displayAnnotations(){
+
+		if(selectedWell === null){
+			return;
+		}
 
 		var anns = [];
 		$.each(annotations, function( index, value ) {

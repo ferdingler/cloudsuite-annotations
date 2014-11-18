@@ -48,6 +48,10 @@ module.exports.routes = {
   'get /annotation/:assetId':{
     controller: 'AnnotationController',
     action: 'get'
+  },
+  'post /annotation':{
+    controller: 'AnnotationController',
+    action: 'create'
   }
 
 };

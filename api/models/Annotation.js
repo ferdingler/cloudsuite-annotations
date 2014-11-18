@@ -20,6 +20,9 @@ module.exports = {
   		type: 'string',
   		required: true
   	},
+    url: {
+      type: 'string'
+    },
   	metadata: {
   		type: 'json'
   	}

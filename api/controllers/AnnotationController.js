@@ -20,6 +20,20 @@ module.exports = {
 			annotations = data;
 			res.send(annotations);
 		});
+	},
+
+	create: function(req, res){
+
+		Annotation.create(req.body).exec(function createCB(err,created){
+
+			var comment = req.body.comment + '<br/>' + req.body.url;
+			var assetIdParam = req.body.assetId;
+			console.log(comment);
+			var fun = NotificationService.parseUserDetails(comment);
+			NotificationService.fetchShareDetails(assetIdParam, res, fun);
+
+		});
+		
 	}
 	
 };
